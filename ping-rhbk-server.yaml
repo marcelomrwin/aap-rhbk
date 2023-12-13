@@ -11,7 +11,7 @@
         method: POST
         body: "client_id={{ rhbk_auth_client }}&username={{ rhbk_admin_user }}&password={{ rhbk_admin_password }}&grant_type=password"
         validate_certs: false
-      no_log: True
+      no_log: false
       register: rhbk_auth_response
       until: rhbk_auth_response.status == 200
       retries: 5
