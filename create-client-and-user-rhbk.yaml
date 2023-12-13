@@ -20,6 +20,10 @@
         url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/realm-management"
         method: GET        
         validate_certs: false
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code: 
+          - 200          
       no_log: false
       register: rhbk_client_response
       until: rhbk_client_response.status == 200
