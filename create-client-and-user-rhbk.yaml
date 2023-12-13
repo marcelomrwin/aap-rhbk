@@ -15,29 +15,17 @@
       retries: 5
       delay: 2
 
-    - name: "Create Client"
+    - name: Retrieve the realm-management Id
       ansible.builtin.uri:
-        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients"
-        method: POST
-        body:
-          clientId: "{{ client_clientId }}"
-          name: "{{ client_name | default(omit) }}"
-          rootUrl: "{{ client_rootUrl | default(omit) }}"
-          adminUrl: "{{ client_adminUrl | default(omit) }}"
-          baseUrl: "{{ client_baseUrl | default(omit) }}"
-          enabled: true
-          protocol: openid-connect
-          standardFlowEnabled: true
-          webOrigins:
-            - "*"
-          redirectUris:
-            - "*"
-          implicitFlowEnabled: false
-          publicClient: false
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/realm-management"
+        method: GET        
         validate_certs: false
-        body_format: json
-        headers:
-          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
-        status_code: 
-          - 200
-          - 201
+      no_log: false
+      register: rhbk_client_response
+      until: rhbk_client_response.status == 200
+      retries: 5
+      delay: 2
+
+    - name: Debug client response
+      ansible.builtin.debug:
+        var: "{{ rhbk_client_response }}"
