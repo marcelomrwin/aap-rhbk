@@ -145,3 +145,53 @@
         status_code: 
           - 200
           - 201
+      register: rhbk_policy
+
+    - name: "Retrieve client resource"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ rhbk_client_response.json[0].id }}/authz/resource-server/resource?first=0&max=11&deep=false"
+        method: GET
+        validate_certs: false
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code: 
+          - 200          
+      no_log: false
+      register: rhbk_resource_client
+      until: rhbk_resource_client.status == 200
+
+    - name: "Retrieve Manage Permission"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ rhbk_client_response.json[0].id }}/authz/resource-server/scope?name=manage"
+        method: GET
+        validate_certs: false
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code: 
+          - 200          
+      no_log: false
+      register: rhbk_resource_manage
+      until: rhbk_resource_manage.status == 200
+
+    - name: "Create Client Permission"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ rhbk_client_response.json[0].id }}/authz/resource-server/permission/scope"
+        method: POST
+        body:
+          resources: 
+            - "{{ rhbk_resource_client.json._id }}"
+          policies:
+            - "{{ rhbk_policy.json.id }}"
+          scopes: 
+            - "{{ rhbk_resource_manage.json[0].id }}"
+          name: "scope-permission-{{ rhbk_client_detail.json.clientId }}"
+          description: "{{ rhbk_client_detail.json.name }} Scoped Permission"
+          decisionStrategy: UNANIMOUS
+        validate_certs: false
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code: 
+          - 200
+          - 201
+      
