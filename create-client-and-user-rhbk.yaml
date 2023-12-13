@@ -33,6 +33,7 @@
           email: "{{ user_email | default(omit) }}"
           firstName: "{{ user_firstName | default(omit) }}"
           lastName: "{{ user_lastName | default(omit) }}"
+          emailVerified: true
         validate_certs: false
         body_format: json
         headers:
@@ -42,7 +43,7 @@
 
     - name: "Get User"
       ansible.builtin.uri:
-        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/users?username={{ user.username }}"
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/users?username={{ user_username }}"
         validate_certs: false
         headers:
           Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
@@ -55,7 +56,7 @@
         body:
           type: password
           temporary: false
-          value: "{{ user.password }}"
+          value: "{{ user_password }}"
         validate_certs: false
         body_format: json
         status_code:
