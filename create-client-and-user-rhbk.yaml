@@ -110,3 +110,20 @@
     - name: Debug client
       ansible.builtin.debug:
         var: rhbk_client
+
+    - name: "Retrieve client {{ client_clientId }} Id"
+      ansible.builtin.uri:
+        url: "{{ rhbk_client.location }}"
+        method: GET
+        validate_certs: false
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code: 
+          - 200          
+      no_log: false
+      register: rhbk_client_detail
+      until: rhbk_client_detail.status == 200
+
+    - name: Debug client detail
+      ansible.builtin.debug:
+        var: rhbk_client_detail
