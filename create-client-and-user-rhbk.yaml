@@ -15,9 +15,9 @@
       retries: 5
       delay: 2
 
-    - name: Retrieve all clients
+    - name: Retrieve realm-management client
       ansible.builtin.uri:
-        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients"
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients?clientId=realm-management"
         method: GET        
         validate_certs: false
         headers:
@@ -26,24 +26,7 @@
           - 200          
       no_log: false
       register: rhbk_client_response
-      until: rhbk_client_response.status == 200
-
-    - name: Debug all clients response
-      ansible.builtin.debug:
-        var: "{{ rhbk_client_response }}"
-
-    - name: Retrieve the realm-management Id
-      ansible.builtin.uri:
-        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/realm-management"
-        method: GET        
-        validate_certs: false
-        headers:
-          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
-        status_code: 
-          - 200          
-      no_log: false
-      register: rhbk_client_response
-      until: rhbk_client_response.status == 200      
+      until: rhbk_client_response.status == 200    
 
     - name: Debug client response
       ansible.builtin.debug:
