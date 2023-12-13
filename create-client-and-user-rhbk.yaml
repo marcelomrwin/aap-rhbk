@@ -1,0 +1,66 @@
+---
+- name: Playbook to create a user and a client on Red Hat Build of Keycloak
+  hosts: all  
+  tasks:
+
+    - name: Generate keycloak auth token
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/realms/master/protocol/openid-connect/token"
+        method: POST
+        body: "client_id={{ rhbk_auth_client }}&username={{ rhbk_admin_user }}&password={{ rhbk_admin_password }}&grant_type=password"
+        validate_certs: false
+      no_log: false
+      register: rhbk_auth_response
+      until: rhbk_auth_response.status == 200
+      retries: 5
+      delay: 2
+
+    - name: "Check if User Already Exists"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/users?username={{ user.username }}"
+        validate_certs: false
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+      register: rhbkk_user_search_result
+
+    - name: "Create User"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/users"
+        method: POST
+        body:
+          enabled: true          
+          username: "{{ user_username }}"
+          email: "{{ user_email | default(omit) }}"
+          firstName: "{{ user_firstName | default(omit) }}"
+          lastName: "{{ user_lastName | default(omit) }}"
+        validate_certs: false
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code: 201
+      when: rhbkk_user_search_result.json | length == 0
+
+    - name: "Get User"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/users?username={{ user.username }}"
+        validate_certs: false
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+      register: rhbk_user
+
+    - name: "Update User Password"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/users/{{ (rhbk_user.json | first).id }}/reset-password"
+        method: PUT
+        body:
+          type: password
+          temporary: false
+          value: "{{ user.password }}"
+        validate_certs: false
+        body_format: json
+        status_code:
+          - 200
+          - 204
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+      register: rhbk_user
