@@ -127,3 +127,21 @@
     - name: Debug client detail
       ansible.builtin.debug:
         var: rhbk_client_detail
+
+    - name: "Create Client Policy"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ rhbk_client_response.json[0].id }}/authz/resource-server/policy/client"
+        method: POST
+        body:
+          clients: 
+            - "{{ rhbk_client_detail.json.id }}"
+          logic: POSITIVE
+          name: "policy-{{ rhbk_client_detail.json.clientId }}"
+          description: "{{ rhbk_client_detail.json.name }} Filter Policy"          
+        validate_certs: false
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code: 
+          - 200
+          - 201
