@@ -26,10 +26,87 @@
           - 200          
       no_log: false
       register: rhbk_client_response
-      until: rhbk_client_response.status == 200    
+      until: rhbk_client_response.status == 200
 
+    - name: "Check if User Already Exists"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/users?username={{ user_username }}"
+        validate_certs: false
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+      register: rhbkk_user_search_result
+
+    - name: "Create User"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/users"
+        method: POST
+        body:
+          enabled: true          
+          username: "{{ user_username }}"
+          email: "{{ user_email | default(omit) }}"
+          firstName: "{{ user_firstName | default(omit) }}"
+          lastName: "{{ user_lastName | default(omit) }}"
+          emailVerified: true
+        validate_certs: false
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code: 201
+      when: rhbkk_user_search_result.json | length == 0
+
+    - name: "Get User"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/users?username={{ user_username }}"
+        validate_certs: false
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+      register: rhbk_user
+
+    - name: "Update User Password"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/users/{{ (rhbk_user.json | first).id }}/reset-password"
+        method: PUT
+        body:
+          type: password
+          temporary: false
+          value: "{{ user_password }}"
+        validate_certs: false
+        body_format: json
+        status_code:
+          - 200
+          - 204
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+      register: rhbk_user
+
+    - name: "Create Client"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients"
+        method: POST
+        body:
+          clientId: "{{ client_clientId }}"
+          name: "{{ client_name | default(omit) }}"
+          rootUrl: "{{ client_rootUrl | default(omit) }}"
+          adminUrl: "{{ client_adminUrl | default(omit) }}"
+          baseUrl: "{{ client_baseUrl | default(omit) }}"
+          enabled: true
+          protocol: openid-connect
+          standardFlowEnabled: true
+          webOrigins:
+            - "*"
+          redirectUris:
+            - "*"
+          implicitFlowEnabled: false
+          publicClient: false
+        validate_certs: false
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code: 
+          - 200
+          - 201
+      register: rhbk_client
+    
     - name: Debug client
       ansible.builtin.debug:
-        var: rhbk_client_response.json[0].id
-    
-    
+        var: rhbk_client
