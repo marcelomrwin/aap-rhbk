@@ -28,6 +28,8 @@
       register: rhbk_client_response
       until: rhbk_client_response.status == 200    
 
-    - name: Debug client response
+    - name: Debug client
       ansible.builtin.debug:
-        var: "{{ rhbk_client_response }}"
+        var: rhbk_client_response.json[0].id
+    
+    
