@@ -160,6 +160,10 @@
       register: rhbk_resource_client
       until: rhbk_resource_client.status == 200
 
+    - name: Debug client resource
+      ansible.builtin.debug:
+        var: rhbk_resource_client
+
     - name: "Retrieve Manage Permission"
       ansible.builtin.uri:
         url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ rhbk_client_response.json[0].id }}/authz/resource-server/scope?name=manage"
