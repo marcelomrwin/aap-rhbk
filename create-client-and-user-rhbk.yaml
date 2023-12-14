@@ -108,6 +108,7 @@
         status_code: 
           - 200
           - 201
+          - 204
 
     - name: "Create Client"
       ansible.builtin.uri:
