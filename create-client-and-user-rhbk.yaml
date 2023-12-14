@@ -76,8 +76,7 @@
           - 200
           - 204
         headers:
-          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
-      register: rhbk_user
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"      
 
     - name: "Create Client"
       ansible.builtin.uri:
