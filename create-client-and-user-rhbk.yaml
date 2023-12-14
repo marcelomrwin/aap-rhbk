@@ -183,7 +183,7 @@
         method: POST
         body:
           resources: 
-            - "{{ rhbk_resource_client.json._id }}"
+            - "{{ rhbk_resource_client.json[0]._id }}"
           policies:
             - "{{ rhbk_policy.json.id }}"
           scopes: 
