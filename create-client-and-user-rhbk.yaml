@@ -133,8 +133,8 @@
         url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ rhbk_client_response.json[0].id }}/authz/resource-server/policy/client"
         method: POST
         body:
-          clients: 
-            - "{{ rhbk_client_detail.json.id }}"
+          users: 
+            - "{{ (rhbk_user.json | first).id }}"
           logic: POSITIVE
           name: "policy-{{ rhbk_client_detail.json.clientId }}"
           description: "{{ rhbk_client_detail.json.name }} Filter Policy"          
@@ -155,7 +155,7 @@
         headers:
           Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
         status_code: 
-          - 200          
+          - 200
       no_log: false
       register: rhbk_resource_client
       until: rhbk_resource_client.status == 200
