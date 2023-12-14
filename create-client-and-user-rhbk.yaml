@@ -129,7 +129,7 @@
 
     - name: "Create Client Policy"
       ansible.builtin.uri:
-        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ rhbk_client_response.json[0].id }}/authz/resource-server/policy/client"
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ (rhbk_client_response.json | first).id }}/authz/resource-server/policy/user"
         method: POST
         body:
           users: 
@@ -148,7 +148,7 @@
 
     - name: "Retrieve client resource"
       ansible.builtin.uri:
-        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ rhbk_client_response.json[0].id }}/authz/resource-server/resource?first=0&max=11&deep=false"
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ (rhbk_client_response.json | first).id }}/authz/resource-server/resource?first=0&max=11&deep=false"
         method: GET
         validate_certs: false
         headers:
