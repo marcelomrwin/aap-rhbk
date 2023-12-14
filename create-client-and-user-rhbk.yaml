@@ -47,6 +47,8 @@
           firstName: "{{ user_firstName | default(omit) }}"
           lastName: "{{ user_lastName | default(omit) }}"
           emailVerified: true
+          realmRoles:
+            - 
         validate_certs: false
         body_format: json
         headers:
@@ -76,7 +78,36 @@
           - 200
           - 204
         headers:
-          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"      
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+
+    - name: "Retrieve permission to list clients"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ (rhbk_client_response.json | first).id }}/roles/query-clients"
+        method: GET
+        validate_certs: false
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code:
+          - 200
+      no_log: false
+      register: rhbk_query_client
+      until: rhbk_query_client.status == 200
+
+    - name: "Set user permission to query clients"
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/users/{{ (rhbk_user.json | first).id }}/role-mappings/clients/{{ (rhbk_client_response.json | first).id }}"
+        method: POST
+        body:
+          id: "{{ rhbk_query_client.json.id }}"
+          name: "{{ rhbk_query_client.json.name }}"
+          description: "{{ rhbk_query_client.json.description }}"          
+        validate_certs: false
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code: 
+          - 200
+          - 201
 
     - name: "Create Client"
       ansible.builtin.uri:
@@ -126,6 +157,21 @@
     - name: Debug client detail
       ansible.builtin.debug:
         var: rhbk_client_detail
+
+    - name: Enable Client Permissions
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ rhbk_client_detail.json.id }}/management/permissions"
+        method: PUT
+        body:
+          enabled: true
+        validate_certs: false
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code: 
+          - 200
+          - 201
+          - 204
 
     - name: "Create Client Policy"
       ansible.builtin.uri:
