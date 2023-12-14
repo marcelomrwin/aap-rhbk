@@ -96,11 +96,11 @@
     - name: "Set user permission to query clients"
       ansible.builtin.uri:
         url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/users/{{ (rhbk_user.json | first).id }}/role-mappings/clients/{{ (rhbk_client_response.json | first).id }}"
-        method: PUT
+        method: POST
         body:
-          id: "{{ rhbk_query_client.json.id }}"
-          name: "{{ rhbk_query_client.json.name }}"
-          description: "{{ rhbk_query_client.json.description }}"          
+          - id: "{{ rhbk_query_client.json.id }}"
+            name: "{{ rhbk_query_client.json.name }}"
+            description: "{{ rhbk_query_client.json.description }}"          
         validate_certs: false
         body_format: json
         headers:
