@@ -193,9 +193,22 @@
           - 201
       register: rhbk_policy
 
+    - name: Retrieve permission scope
+      ansible.builtin.uri:
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ (rhbk_client_response.json | first).id }}/authz/resource-server/permission?name=manage.permission.client.{{ rhbk_client_detail.json.id }}"
+        method: GET
+        validate_certs: false
+        headers:
+          Authorization: "Bearer {{ rhbk_auth_response.json.access_token }}"
+        status_code: 
+          - 200
+      no_log: false
+      register: rhbk_permission_scope
+      until: rhbk_permission_scope.status == 200      
+
     - name: "Retrieve client resource"
       ansible.builtin.uri:
-        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ (rhbk_client_response.json | first).id }}/authz/resource-server/resource?first=0&max=11&deep=false"
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ (rhbk_client_response.json | first).id }}/authz/resource-server/resource?first=0&max=11&deep=false&name=client.resource.{{ rhbk_client_detail.json.id }}"
         method: GET
         validate_certs: false
         headers:
@@ -223,20 +236,23 @@
       register: rhbk_resource_manage
       until: rhbk_resource_manage.status == 200
 
-    - name: "Create Client Permission"
+    - name: Associate permission to list the client
       ansible.builtin.uri:
-        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ rhbk_client_response.json[0].id }}/authz/resource-server/permission/scope"
-        method: POST
+        url: "{{ rhbk_management_url }}/admin/realms/{{ rhbk_realm }}/clients/{{ (rhbk_client_response.json | first).id }}/authz/resource-server/permission/scope/{{ (rhbk_permission_scope.json | first).id }}"
+        method: PUT
         body:
-          resources: 
-            - "{{ rhbk_resource_client.json[0]._id }}"
+          id: "{{ (rhbk_permission_scope.json | first).id }}"
+          name: "{{ (rhbk_permission_scope.json | first).name }}"          
+          description: "{{ rhbk_client_detail.json.name }} Scoped Permission"
+          type: scope
+          logic: POSITIVE
+          decisionStrategy: UNANIMOUS
+          resources:
+            - "{{ (rhbk_resource_client.json | first)._id }}"
           policies:
             - "{{ rhbk_policy.json.id }}"
-          scopes: 
+          scopes:
             - "{{ rhbk_resource_manage.json[0].id }}"
-          name: "scope-permission-{{ rhbk_client_detail.json.clientId }}"
-          description: "{{ rhbk_client_detail.json.name }} Scoped Permission"
-          decisionStrategy: UNANIMOUS
         validate_certs: false
         body_format: json
         headers:
